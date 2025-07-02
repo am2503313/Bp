@@ -21,15 +21,11 @@ jobs:
     - name: Set User Password
       run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
 
-    - name: Authenticate with LocalXpose
+    - name: Create Tunnel with LocalXpose
       env:
         LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
       run: |
-        .\loclx.exe authtoken $env:LOCX_TOKEN
-
-    - name: Create Tunnel with LocalXpose
-      run: |
         echo "Creating tunnel with LocalXpose..."
-        echo "RDP connection details will appear below:"
-        .\loclx.exe tunnel tcp --to 127.0.0.1:3389
+        .\loclx.exe tunnel tcp --to 127.0.0.1:3389 --token $env:LOCX_TOKEN
       timeout-minutes: 360
+      
