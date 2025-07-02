@@ -2,30 +2,29 @@ name: Windows RDP - LocalXpose
 
 on: [push, workflow_dispatch]
 
-jobs:
-  build:
-    runs-on: windows-latest
-    
-    steps:
-    - name: Download LocalXpose
-      run: |
-        Invoke-WebRequest -Uri "https://api.localxpose.io/api/v2/downloads/loclx-windows-amd64.zip" -OutFile "loclx.zip"
-        Expand-Archive -Path "loclx.zip" -DestinationPath "."
+jobs: build: runs-on: windows-latest
 
-    - name: Enable RDP
-      run: |
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+steps:
+- name: Download LocalXpose
+  run: |
+    Invoke-WebRequest -Uri "https://api.localxpose.io/api/v2/downloads/loclx-windows-amd64.zip" -OutFile "loclx.zip"
+    Expand-Archive -Path "loclx.zip" -DestinationPath "."
 
-    - name: Set User Password
-      run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
+- name: Enable RDP
+  run: |
+    Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+    Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-    - name: Create Tunnel with LocalXpose
-      env:
-        LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
-      run: |
-        echo "Creating tunnel with LocalXpose..."
-        .\loclx.exe tunnel tcp --to 127.0.0.1:3389 --token $env:LOCX_TOKEN
-      timeout-minutes: 360
-      
+- name: Set User Password
+  run: |
+    Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
+
+- name: Authenticate with LocalXpose
+  run: .\loclx.exe authtoken $env:LOCX_TOKEN
+  env:
+    LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
+
+- name: Create Tunnel with LocalXpose
+  run: .\loclx.exe tunnel tcp --to 127.0.0.1:3389
+  timeout-minutes: 360
+
