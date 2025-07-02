@@ -7,28 +7,57 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      - name: Download LocalXpose
+      - name: Download and Setup LocalXpose
         run: |
+          Write-Host "Downloading LocalXpose..."
           Invoke-WebRequest -Uri "https://api.localxpose.io/api/v2/downloads/loclx-windows-amd64.zip" -OutFile "loclx.zip"
-          Expand-Archive -Path "loclx.zip" -DestinationPath "."
+          
+          Write-Host "Extracting LocalXpose..."
+          Expand-Archive -Path "loclx.zip" -DestinationPath "." -Force
+          
+          Write-Host "Directory contents after extraction:"
+          Get-ChildItem -Path "."
+          
+          # Verify the executable exists
+          if (Test-Path ".\loclx.exe") {
+              Write-Host "✓ loclx.exe found successfully"
+          } else {
+              Write-Host "✗ loclx.exe not found! Checking subdirectories..."
+              Get-ChildItem -Path "." -Recurse -Name "*.exe"
+              exit 1
+          }
 
       - name: Enable RDP
         run: |
+          Write-Host "Enabling RDP..."
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Write-Host "✓ RDP enabled successfully"
 
       - name: Set User Password
         run: |
+          Write-Host "Setting user password..."
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
+          Write-Host "✓ Password set successfully"
 
       - name: Authenticate with LocalXpose
         env:
           LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
         run: |
+          Write-Host "Authenticating with LocalXpose..."
+          if ([string]::IsNullOrEmpty($env:LOCX_TOKEN)) {
+              Write-Host "✗ LOCX_TOKEN is not set!"
+              exit 1
+          }
+          
+          Write-Host "Token length: $($env:LOCX_TOKEN.Length)"
           .\loclx.exe authtoken $env:LOCX_TOKEN
+          Write-Host "✓ Authentication successful"
 
       - name: Create Tunnel with LocalXpose
         run: |
-          echo "Creating tunnel with LocalXpose..."
+          Write-Host "Creating RDP tunnel..."
+          Write-Host "Tunnel will be active for 6 hours (360 minutes)"
+          Write-Host "Connect to the tunnel URL that will be displayed below:"
           .\loclx.exe tunnel tcp --to 127.0.0.1:3389
         timeout-minutes: 360
