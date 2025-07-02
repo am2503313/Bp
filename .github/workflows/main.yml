@@ -25,7 +25,7 @@ jobs:
       env:
         LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
       run: |
-        .\loclx.exe account login $env:LOCX_TOKEN
+        .\loclx.exe authtoken $env:LOCX_TOKEN
 
     - name: Create Tunnel with LocalXpose
       run: |
