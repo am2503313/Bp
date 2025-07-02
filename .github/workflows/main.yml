@@ -40,17 +40,26 @@ jobs:
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
           Write-Host "✓ Password set successfully"
 
-      - name: Start RDP Tunnel
+      - name: Authenticate with LocalXpose
         env:
           LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
         run: |
+          Write-Host "Authenticating with LocalXpose..."
+          .\loclx.exe authtoken $env:LOCX_TOKEN
+          Write-Host "✓ Authentication successful"
+
+      - name: Start RDP Tunnel
+        run: |
           Write-Host "Starting LocalXpose RDP tunnel..."
-          Write-Host "RDP Credentials:"
-          Write-Host "  Username: runneradmin"
-          Write-Host "  Password: P@ssw0rd!strong123"
           Write-Host ""
-          Write-Host "Creating tunnel (this will show the connection URL)..."
+          Write-Host "=== RDP CONNECTION DETAILS ==="
+          Write-Host "Username: runneradmin"
+          Write-Host "Password: P@ssw0rd!strong123"
+          Write-Host "=============================="
+          Write-Host ""
+          Write-Host "Creating tunnel... The connection URL will appear below:"
+          Write-Host ""
           
-          # Start tunnel directly with token
-          .\loclx.exe tunnel tcp --to 127.0.0.1:3389 --token $env:LOCX_TOKEN
+          # Start tunnel (this will show the public URL)
+          .\loclx.exe tunnel tcp --to 127.0.0.1:3389
         timeout-minutes: 360
