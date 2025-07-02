@@ -1,0 +1,34 @@
+name: Windows RDP - LocalXpose
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Download LocalXpose
+      run: |
+        Invoke-WebRequest -Uri "https://api.localxpose.io/api/v2/downloads/loclx-windows-amd64.zip" -OutFile "loclx.zip"
+        Expand-Archive -Path "loclx.zip" -DestinationPath "."
+
+    - name: Enable RDP
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -name "UserAuthentication" -Value 1
+
+    - name: Set User Password
+      run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
+
+    - name: Authenticate LocalXpose
+      run: |
+        echo "Authenticating with LocalXpose..."
+        .\loclx.exe account login --token 45rbiyZb87vG9TrZCUIsIzmdf3h8mdp4vuk2DfdR
+
+    - name: Create Tunnel
+      run: |
+        echo "Creating tunnel with LocalXpose..."
+        echo "RDP connection details will appear below:"
+        .\loclx.exe tunnel tcp --to 127.0.0.1:3389
+      timeout-minutes: 360
