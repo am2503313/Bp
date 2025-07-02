@@ -2,32 +2,33 @@ name: Windows RDP - LocalXpose
 
 on: [push, workflow_dispatch]
 
-jobs: build: runs-on: windows-latest
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Download LocalXpose
+        run: |
+          Invoke-WebRequest -Uri "https://api.localxpose.io/api/v2/downloads/loclx-windows-amd64.zip" -OutFile "loclx.zip"
+          Expand-Archive -Path "loclx.zip" -DestinationPath "."
 
-steps:
-  - name: Download LocalXpose
-    run: |
-      Invoke-WebRequest -Uri "https://api.localxpose.io/api/v2/downloads/loclx-windows-amd64.zip" -OutFile "loclx.zip"
-      Expand-Archive -Path "loclx.zip" -DestinationPath "."
+      - name: Enable RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
 
-  - name: Enable RDP
-    run: |
-      Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-      Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+      - name: Set User Password
+        run: |
+          Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
 
-  - name: Set User Password
-    run: |
-      Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
+      - name: Authenticate with LocalXpose
+        env:
+          LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
+        run: |
+          .\loclx.exe authtoken $env:LOCX_TOKEN
 
-  - name: Authenticate with LocalXpose
-    env:
-      LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
-    run: |
-      .\loclx.exe authtoken $env:LOCX_TOKEN
-
-  - name: Create Tunnel with LocalXpose
-    run: |
-      echo "Creating tunnel with LocalXpose..."
-      .\loclx.exe tunnel tcp --to 127.0.0.1:3389
-    timeout-minutes: 360
-
+      - name: Create Tunnel with LocalXpose
+        run: |
+          echo "Creating tunnel with LocalXpose..."
+          .\loclx.exe tunnel tcp --to 127.0.0.1:3389
+        timeout-minutes: 360
