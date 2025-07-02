@@ -40,30 +40,17 @@ jobs:
           Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!strong123" -Force)
           Write-Host "✓ Password set successfully"
 
-      - name: Authenticate with LocalXpose
+      - name: Start RDP Tunnel
         env:
           LOCX_TOKEN: ${{ secrets.LOCX_TOKEN }}
         run: |
-          Write-Host "Authenticating with LocalXpose..."
-          if ([string]::IsNullOrEmpty($env:LOCX_TOKEN)) {
-              Write-Host "✗ LOCX_TOKEN is not set!"
-              exit 1
-          }
+          Write-Host "Starting LocalXpose RDP tunnel..."
+          Write-Host "RDP Credentials:"
+          Write-Host "  Username: runneradmin"
+          Write-Host "  Password: P@ssw0rd!strong123"
+          Write-Host ""
+          Write-Host "Creating tunnel (this will show the connection URL)..."
           
-          Write-Host "Token length: $($env:LOCX_TOKEN.Length)"
-          .\loclx.exe authtoken $env:LOCX_TOKEN
-          Write-Host "✓ Authentication successful"
-
-      - name: Create Tunnel with LocalXpose
-        run: |
-          Write-Host "Creating RDP tunnel..."
-          Write-Host "Tunnel will be active for 6 hours (360 minutes)"
-          Write-Host "Connect to the tunnel URL that will be displayed below:"
-          Write-Host "Username: runneradmin"
-          Write-Host "Password: P@ssw0rd!strong123"
-          Write-Host "Starting tunnel in background..."
-          Start-Process -FilePath ".\loclx.exe" -ArgumentList "tunnel", "tcp", "--to", "127.0.0.1:3389" -NoNewWindow -PassThru
-          Write-Host "Tunnel started! Check the logs above for the connection URL."
-          Write-Host "Keeping the workflow alive..."
-          Start-Sleep -Seconds 21600  # 6 hours
+          # Start tunnel directly with token
+          .\loclx.exe tunnel tcp --to 127.0.0.1:3389 --token $env:LOCX_TOKEN
         timeout-minutes: 360
