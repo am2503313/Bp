@@ -59,5 +59,11 @@ jobs:
           Write-Host "Creating RDP tunnel..."
           Write-Host "Tunnel will be active for 6 hours (360 minutes)"
           Write-Host "Connect to the tunnel URL that will be displayed below:"
-          .\loclx.exe tunnel tcp --to 127.0.0.1:3389
+          Write-Host "Username: runneradmin"
+          Write-Host "Password: P@ssw0rd!strong123"
+          Write-Host "Starting tunnel in background..."
+          Start-Process -FilePath ".\loclx.exe" -ArgumentList "tunnel", "tcp", "--to", "127.0.0.1:3389" -NoNewWindow -PassThru
+          Write-Host "Tunnel started! Check the logs above for the connection URL."
+          Write-Host "Keeping the workflow alive..."
+          Start-Sleep -Seconds 21600  # 6 hours
         timeout-minutes: 360
